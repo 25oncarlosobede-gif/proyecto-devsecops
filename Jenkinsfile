@@ -8,11 +8,6 @@ pipeline {
                 git branch: 'desarrollo', url: 'https://github.com/25oncarlosobede-gif/proyecto-devsecops.git'
             }
         }
-        stage('Instalar Docker') {
-            steps {
-                sh 'apt-get update && apt-get install -y docker.io'
-            }
-        }   
         stage('Construir Imagen Docker (Build)') {
             steps {
                 echo 'Construyendo el contenedor seguro...'
