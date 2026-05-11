@@ -1,33 +1,27 @@
 pipeline {
     agent any
     stages {
-        stage('Descargar Código') {
+        stage('Construir Imagen (Build)') {
             steps {
-                echo 'Clonando el repositorio desde GitHub...'
-                // Cambia esta URL por la tuya
-                git branch: 'desarrollo', url: 'https://github.com/25oncarlosobede-gif/proyecto-devsecops.git'
-            }
-        }
-        stage('Comprobar entorno') {
-            steps {
-                echo 'Comprobando entorno de Jenkins...'
-                sh 'whoami'
-                sh 'pwd'
-                sh 'ls -la'
-                sh 'docker --version'
-                sh 'docker info'
-            }
-        }
-        stage('Construir Imagen Docker (Build)') {
-            steps {
-                echo 'Construyendo el contenedor seguro...'
+                echo 'Construyendo el contenedor...'
                 sh 'docker build -t mi-app-segura:latest .'
             }
         }
-        stage('Verificar Imagen') {
+        stage('Análisis de Seguridad (Trivy)') {
             steps {
-                echo 'Verificando que la imagen se ha creado...'
-                sh 'docker images | grep mi-app-segura'
+                echo 'Buscando vulnerabilidades CRÍTICAS...'
+                // Ejecutamos Trivy. Si falla, el pipeline se corta aquí.
+                sh 'docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy image --exit-code 1 --severity CRITICAL mi-app-segura:latest'
+            }
+        }
+        stage('Despliegue en Producción (CD)') {
+            steps {
+                echo '¡Imagen limpia! Desplegando en el servidor...'
+                // Detenemos el contenedor viejo si existe (el || true evita que falle la primera vez)
+                sh 'docker stop app-produccion || true'
+                sh 'docker rm app-produccion || true'
+                // Arrancamos el nuevo
+                sh 'docker run -d --name app-produccion mi-app-segura:latest'
             }
         }
     }
